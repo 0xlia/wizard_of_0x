@@ -1,6 +1,10 @@
-use std::fmt::Display;
+#![allow(unused)]
+use std::{fmt::Display};
+use rand::{Rng, seq::SliceRandom};
+use rand_distr::Alphanumeric;
+use thiserror::Error;
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 enum GamePhase {
     NotStarted,
     ChooseTrumpf,
@@ -11,30 +15,18 @@ enum GamePhase {
 }
 
 
-
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 enum Suit {
     Red,
-    Blue,
-    Green,
     Yellow,
+    Green,
+    Blue,
 }
 
-
+#[derive(Debug, PartialEq, Eq)]
 struct Card {
     suit: Suit,
     value: usize,
-}
-
-impl PartialEq for Card {
-    fn eq(&self, other: &Self) -> bool {
-        if self.suit == other.suit {
-            if self.value == other.value {
-                return true;
-            }
-        }
-        return false;
-    }
 }
 
 impl Card {
@@ -46,6 +38,34 @@ impl Card {
     }
 }
 
+#[derive(Debug)]
+struct Deck {
+    deck: [Card; 60]
+}
+
+impl Deck {
+    fn new() -> Self {
+        let deck: [Card; 60] = std::array::from_fn(|i| Card::new(match i % 4 {
+            0 => Suit::Blue,
+            1 => Suit::Red,
+            2 => Suit::Green,
+            3 => Suit::Yellow,
+            _ => unreachable!(),
+        }, i / 4));
+
+        dbg!(&deck);
+        Self { deck }
+    }
+
+    /// shuffle cards
+    fn shuffle(&mut self){
+        self.deck.shuffle(&mut rand::rng());
+    }
+}
+
+    
+
+#[derive(Debug)]
 struct Player {
     name: String, 
     hand: Vec<Card>,
@@ -57,7 +77,7 @@ struct Player {
 impl Player {
     pub fn new(name: String) -> Self {
         Player {
-            name: name,
+            name,
             hand: Vec::new(),
             prediction: 0, 
             tricks_won: 0, 
@@ -67,7 +87,8 @@ impl Player {
 }
 
 
-struct WizardGame {
+#[derive(Debug)]
+pub struct WizardGame {
     id: String,
 
     // players
@@ -80,7 +101,7 @@ struct WizardGame {
     round_number: usize,
 
     // Cards
-    deck: Vec<Card>,
+    deck: Deck,
     trumpf: Option<Suit>, 
     waiting_for_trumpf_choice: bool, 
     trumpf_chooser: Option<Player>,
@@ -89,14 +110,23 @@ struct WizardGame {
 }
 
 impl WizardGame {
+    /// Creates new gamestate
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use gameserver::gamelogic::WizardGame;
+    /// let game = WizardGame::new(3, "JARV1S".to_string());
+    /// ```
+    #[must_use]
     pub fn new(num_players: usize, player_name: String) -> Self {
         let new_player = Player::new(player_name);
         
         Self {
-            id: "abc".to_string(),
+            id: Self::create_id(),
 
             // players
-            num_players: num_players,
+            num_players,
             players: vec![new_player],
             current_player_index: 0,
 
@@ -105,7 +135,7 @@ impl WizardGame {
             round_number: 0,
 
             // Cards
-            deck: Self::create_deck(),
+            deck: Deck::new(),
             trumpf: None, 
             waiting_for_trumpf_choice: false, 
             trumpf_chooser: None,
@@ -114,20 +144,22 @@ impl WizardGame {
         }
     }
 
-
-    // not started
-    fn create_deck() -> Vec<Card> {
-        let mut cards = Vec::new();
-        for value in 0..15 {
-            cards.push(Card::new(Suit::Blue, value));
-            cards.push(Card::new(Suit::Red, value));
-            cards.push(Card::new(Suit::Green, value));
-            cards.push(Card::new(Suit::Yellow, value));
-        }
-        cards
-
+    /// PHASE: `NOT_STARTED`
+    /// returns random ID
+    fn create_id() -> String {
+        let password_len = 5;
+        let mut rng = rand::rng();
+        let id: String = (0..password_len)
+            .map(|_| rng.sample(Alphanumeric) as char)
+            .collect();
+        id
     }
 
+    /// add player to game
+    fn add_player(&mut self, player_name: String) -> Result<(), ()>{
+        assert!(self.players.len() < self.num_players);
+        Ok(())
+    }
 
 
 
