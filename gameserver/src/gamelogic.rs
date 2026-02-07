@@ -4,6 +4,27 @@ use rand::{Rng, seq::SliceRandom};
 use rand_distr::Alphanumeric;
 use thiserror::Error;
 
+
+#[derive(Debug, Error, PartialEq, Eq)]
+pub enum GameLogicError {
+    #[error(transparent)]
+    AddPlayer(#[from] AddPlayerError)
+}
+
+#[derive(Debug, Error, PartialEq, Eq)]
+pub enum AddPlayerError {
+    #[error("The lobby was already at max capacity {max_players}/{max_players}.")]
+    LobbyFull{
+        max_players: usize
+    },
+
+    #[error("{name} already taken.")]
+    NameTaken{
+        name: String
+    }
+}
+
+
 #[derive(Debug, PartialEq, Eq)]
 enum GamePhase {
     NotStarted,
@@ -38,7 +59,7 @@ impl Card {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 struct Deck {
     deck: [Card; 60]
 }
@@ -65,7 +86,7 @@ impl Deck {
 
     
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 struct Player {
     name: String, 
     hand: Vec<Card>,
@@ -75,9 +96,9 @@ struct Player {
 }
 
 impl Player {
-    pub fn new(name: String) -> Self {
+    pub fn new(name: impl Into<String>) -> Self {
         Player {
-            name,
+            name: name.into(),
             hand: Vec::new(),
             prediction: 0, 
             tricks_won: 0, 
@@ -87,7 +108,7 @@ impl Player {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct WizardGame {
     id: String,
 
@@ -116,10 +137,10 @@ impl WizardGame {
     /// 
     /// ```
     /// use gameserver::gamelogic::WizardGame;
-    /// let game = WizardGame::new(3, "JARV1S".to_string());
+    /// let game = WizardGame::new(3, "JARV1S");
     /// ```
     #[must_use]
-    pub fn new(num_players: usize, player_name: String) -> Self {
+    pub fn new(num_players: usize, player_name: impl Into<String>) -> Self {
         let new_player = Player::new(player_name);
         
         Self {
@@ -139,7 +160,7 @@ impl WizardGame {
             trumpf: None, 
             waiting_for_trumpf_choice: false, 
             trumpf_chooser: None,
-            trick_starter: None, 
+            trick_starter: None,
             current_trick: Vec::new(),
         }
     }
@@ -156,17 +177,67 @@ impl WizardGame {
     }
 
     /// add player to game
-    fn add_player(&mut self, player_name: String) -> Result<(), ()>{
-        assert!(self.players.len() < self.num_players);
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use gameserver::gamelogic::WizardGame;
+    /// 
+    /// let game = WizardGame::new(3, "Justus");
+    /// let new_player = Player::new("TruelyMostWanted")
+    /// game.add_player(new_player);
+    /// ```
+    pub fn add_player(&mut self, player: Player) -> Result<(), AddPlayerError>{
+        // lobby full
+        if self.players.len() >= self.num_players {
+            return Err(AddPlayerError::LobbyFull { max_players: self.num_players })
+        }
+
+        // name already exists
+        if self.players.iter().any(|other| player.name == other.name) {
+            return Err(AddPlayerError::NameTaken { name: player.name })
+        }
+
+        // add new player
+        self.players.push(player);
+        
         Ok(())
     }
 
-
-
-
-
-
-
-
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn add_player_succeeds() {
+        let mut lobby = WizardGame::new(3, "Nyuchen");
+        
+        let hase = Player::new("Wuschelhase");
+        lobby.add_player(hase).unwrap();
+
+        assert!(lobby.players.into_iter().eq(vec![Player::new("Nyuchen"), Player::new("Wuschelhase")]));
+    }
+
+    #[test]
+    fn add_player_full_lobby_fails() {
+        let mut lobby = WizardGame::new(3, "CallMeJooooooo");
+        lobby.add_player(Player::new("Justus_Fluegel")).unwrap();
+        lobby.add_player(Player::new("gast_lurksAALot")).unwrap();
+        
+        assert_eq!(
+            lobby.add_player(Player::new("Adri86rose")).unwrap_err(),
+            AddPlayerError::LobbyFull { max_players: 3}
+        );
+    }
+
+    #[test]
+    fn add_player_name_taken_fails() {
+        let mut lobby = WizardGame::new(3, "kaipai5");
+        assert_eq!(
+            lobby.add_player(Player::new("kaipai5")).unwrap_err(),
+            AddPlayerError::NameTaken { name: "kaipai5".to_string() }
+        );
+    }
+}
