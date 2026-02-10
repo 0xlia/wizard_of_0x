@@ -1,29 +1,23 @@
 #![allow(unused)]
-use std::{fmt::Display};
 use rand::{Rng, seq::SliceRandom};
 use rand_distr::Alphanumeric;
+use std::fmt::Display;
 use thiserror::Error;
-
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum GameLogicError {
     #[error(transparent)]
-    AddPlayer(#[from] AddPlayerError)
+    AddPlayer(#[from] AddPlayerError),
 }
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum AddPlayerError {
     #[error("The lobby was already at max capacity {max_players}/{max_players}.")]
-    LobbyFull{
-        max_players: usize
-    },
+    LobbyFull { max_players: usize },
 
     #[error("{name} already taken.")]
-    NameTaken{
-        name: String
-    }
+    NameTaken { name: String },
 }
-
 
 #[derive(Debug, PartialEq, Eq)]
 enum GamePhase {
@@ -31,10 +25,9 @@ enum GamePhase {
     ChooseTrumpf,
     Prediction,
     Playing,
-    RoundEnd, 
+    RoundEnd,
     GameOver,
 }
-
 
 #[derive(Debug, PartialEq, Eq)]
 enum Suit {
@@ -51,47 +44,56 @@ struct Card {
 }
 
 impl Card {
-    pub fn new(suit: Suit, value: usize) -> Self{
-        Card {
-            suit,
-            value
-        }
+    pub fn new(suit: Suit, value: usize) -> Self {
+        Card { suit, value }
     }
 }
 
 #[derive(Debug, PartialEq, Eq)]
 struct Deck {
-    deck: [Card; 60]
+    deck: [Card; 60],
 }
 
 impl Deck {
     fn new() -> Self {
-        let deck: [Card; 60] = std::array::from_fn(|i| Card::new(match i % 4 {
-            0 => Suit::Blue,
-            1 => Suit::Red,
-            2 => Suit::Green,
-            3 => Suit::Yellow,
-            _ => unreachable!(),
-        }, i / 4));
+        let deck: [Card; 60] = std::array::from_fn(|i| {
+            Card::new(
+                match i % 4 {
+                    0 => Suit::Blue,
+                    1 => Suit::Red,
+                    2 => Suit::Green,
+                    3 => Suit::Yellow,
+                    _ => unreachable!(),
+                },
+                i / 4,
+            )
+        });
 
-        dbg!(&deck);
         Self { deck }
     }
 
     /// shuffle cards
-    fn shuffle(&mut self){
+    fn shuffle(&mut self) {
         self.deck.shuffle(&mut rand::rng());
+    }
+
+    fn deal_cards(self, players: &mut Vec<Player>, round_number: usize) {
+        // for (player_index, player) in players.enumerate() {
+        //     for i in 0..round_number {
+        //         player
+        //             .hand
+        //             .append(self.deck[player_index * round_number + i]);
+        //     }
     }
 }
 
-    
 
 #[derive(Debug, PartialEq, Eq)]
-struct Player {
-    name: String, 
+pub struct Player {
+    name: String,
     hand: Vec<Card>,
     prediction: usize,
-    tricks_won: usize, 
+    tricks_won: usize,
     points: usize,
 }
 
@@ -100,13 +102,18 @@ impl Player {
         Player {
             name: name.into(),
             hand: Vec::new(),
-            prediction: 0, 
-            tricks_won: 0, 
+            prediction: 0,
+            tricks_won: 0,
             points: 0,
         }
     }
-}
 
+    pub fn reset(&mut self) {
+        self.hand = Vec::new();
+        self.prediction = 0;
+        self.tricks_won = 0;
+    }
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct WizardGame {
@@ -118,23 +125,23 @@ pub struct WizardGame {
     current_player_index: usize,
 
     // round
-    game_phase: GamePhase, 
+    game_phase: GamePhase,
     round_number: usize,
 
     // Cards
     deck: Deck,
-    trumpf: Option<Suit>, 
-    waiting_for_trumpf_choice: bool, 
+    trumpf: Option<Suit>,
+    waiting_for_trumpf_choice: bool,
     trumpf_chooser: Option<Player>,
-    trick_starter: Option<Player>, 
+    trick_starter: Option<Player>,
     current_trick: Vec<Card>,
 }
 
 impl WizardGame {
     /// Creates new gamestate
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use gameserver::gamelogic::WizardGame;
     /// let game = WizardGame::new(3, "JARV1S");
@@ -142,7 +149,7 @@ impl WizardGame {
     #[must_use]
     pub fn new(num_players: usize, player_name: impl Into<String>) -> Self {
         let new_player = Player::new(player_name);
-        
+
         Self {
             id: Self::create_id(),
 
@@ -152,13 +159,13 @@ impl WizardGame {
             current_player_index: 0,
 
             // round
-            game_phase: GamePhase::NotStarted, 
+            game_phase: GamePhase::NotStarted,
             round_number: 0,
 
             // Cards
             deck: Deck::new(),
-            trumpf: None, 
-            waiting_for_trumpf_choice: false, 
+            trumpf: None,
+            waiting_for_trumpf_choice: false,
             trumpf_chooser: None,
             trick_starter: None,
             current_trick: Vec::new(),
@@ -177,33 +184,52 @@ impl WizardGame {
     }
 
     /// add player to game
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use gameserver::gamelogic::WizardGame;
-    /// 
+    ///
     /// let game = WizardGame::new(3, "Justus");
     /// let new_player = Player::new("TruelyMostWanted")
     /// game.add_player(new_player);
     /// ```
-    pub fn add_player(&mut self, player: Player) -> Result<(), AddPlayerError>{
+    ///
+    /// # Errors
+    ///
+    ///
+    pub fn add_player(&mut self, player: Player) -> Result<(), AddPlayerError> {
         // lobby full
         if self.players.len() >= self.num_players {
-            return Err(AddPlayerError::LobbyFull { max_players: self.num_players })
+            return Err(AddPlayerError::LobbyFull {
+                max_players: self.num_players,
+            });
         }
 
         // name already exists
         if self.players.iter().any(|other| player.name == other.name) {
-            return Err(AddPlayerError::NameTaken { name: player.name })
+            return Err(AddPlayerError::NameTaken { name: player.name });
         }
 
         // add new player
         self.players.push(player);
-        
+
         Ok(())
     }
 
+    /// start game
+    fn start_game(&mut self) {}
+
+    fn start_new_round(&mut self) {
+        self.round_number += 1;
+        self.deck.shuffle();
+        // reset players
+        for player in &mut self.players {
+            player.reset();
+        }
+
+        // deal cards
+    }
 }
 
 #[cfg(test)]
@@ -213,11 +239,16 @@ mod test {
     #[test]
     fn add_player_succeeds() {
         let mut lobby = WizardGame::new(3, "Nyuchen");
-        
+
         let hase = Player::new("Wuschelhase");
         lobby.add_player(hase).unwrap();
 
-        assert!(lobby.players.into_iter().eq(vec![Player::new("Nyuchen"), Player::new("Wuschelhase")]));
+        assert!(
+            lobby
+                .players
+                .into_iter()
+                .eq(vec![Player::new("Nyuchen"), Player::new("Wuschelhase")])
+        );
     }
 
     #[test]
@@ -225,10 +256,10 @@ mod test {
         let mut lobby = WizardGame::new(3, "CallMeJooooooo");
         lobby.add_player(Player::new("Justus_Fluegel")).unwrap();
         lobby.add_player(Player::new("gast_lurksAALot")).unwrap();
-        
+
         assert_eq!(
             lobby.add_player(Player::new("Adri86rose")).unwrap_err(),
-            AddPlayerError::LobbyFull { max_players: 3}
+            AddPlayerError::LobbyFull { max_players: 3 }
         );
     }
 
@@ -237,7 +268,9 @@ mod test {
         let mut lobby = WizardGame::new(3, "kaipai5");
         assert_eq!(
             lobby.add_player(Player::new("kaipai5")).unwrap_err(),
-            AddPlayerError::NameTaken { name: "kaipai5".to_string() }
+            AddPlayerError::NameTaken {
+                name: "kaipai5".to_string()
+            }
         );
     }
 }
