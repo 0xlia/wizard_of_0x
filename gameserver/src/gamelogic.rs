@@ -29,7 +29,7 @@ enum GamePhase {
     GameOver,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, PartialOrd, Ord)]
 enum Suit {
     Red,
     Yellow,
@@ -37,7 +37,7 @@ enum Suit {
     Blue,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, PartialOrd, Ord)]
 struct Card {
     suit: Suit,
     value: usize,
@@ -50,12 +50,12 @@ impl Card {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct Deck {
+pub struct Deck {
     deck: [Card; 60],
 }
 
 impl Deck {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let deck: [Card; 60] = std::array::from_fn(|i| {
             Card::new(
                 match i % 4 {
@@ -77,13 +77,18 @@ impl Deck {
         self.deck.shuffle(&mut rand::rng());
     }
 
-    fn deal_cards(self, players: &mut Vec<Player>, round_number: usize) {
-        // for (player_index, player) in players.enumerate() {
-        //     for i in 0..round_number {
-        //         player
-        //             .hand
-        //             .append(self.deck[player_index * round_number + i]);
-        //     }
+    fn deal_cards(&self, players: &mut Vec<Player>, round_number: usize) -> Option<Card> {
+        for (player_index, player) in players.into_iter().enumerate() {
+            for i in 0..round_number {
+                player
+                    .hand
+                    .push(self.deck[player_index * round_number + i].clone());
+            }
+        }
+        if players.len() * round_number  < self.deck.len() {
+            return Some(self.deck[players.len() * round_number].clone())
+        };
+        return None
     }
 }
 
@@ -113,6 +118,10 @@ impl Player {
         self.prediction = 0;
         self.tricks_won = 0;
     }
+
+    pub fn sort_hand(&mut self) {
+        self.hand.sort();
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -130,9 +139,8 @@ pub struct WizardGame {
 
     // Cards
     deck: Deck,
-    trumpf: Option<Suit>,
-    waiting_for_trumpf_choice: bool,
-    trumpf_chooser: Option<Player>,
+    trumpf: Option<Card>,
+    trumpf_chooser_index: Option<usize>,
     trick_starter: Option<Player>,
     current_trick: Vec<Card>,
 }
@@ -165,8 +173,7 @@ impl WizardGame {
             // Cards
             deck: Deck::new(),
             trumpf: None,
-            waiting_for_trumpf_choice: false,
-            trumpf_chooser: None,
+            trumpf_chooser_index: None,
             trick_starter: None,
             current_trick: Vec::new(),
         }
@@ -218,17 +225,40 @@ impl WizardGame {
     }
 
     /// start game
-    fn start_game(&mut self) {}
+    pub fn start_game(&mut self) {
+        self.start_new_round();
+    }
 
+    // Game Phase NOT STARTED
     fn start_new_round(&mut self) {
         self.round_number += 1;
+        self.current_player_index = self.round_number % self.players.len() - 1;
         self.deck.shuffle();
+
         // reset players
         for player in &mut self.players {
             player.reset();
         }
 
-        // deal cards
+        // reset WizardGame
+        self.current_trick = Vec::new();
+        self.trick_starter = None; 
+
+        // deal cards and get trumpf card 
+        self.trumpf = self.deck.deal_cards(&mut self.players, self.round_number);
+
+        // trumpf == WIZARD? -> set new Game Phase
+        if let Some(card) = &self.trumpf && card.value == 14 {
+            self.game_phase = GamePhase::ChooseTrumpf;
+            if self.current_player_index == 0{
+                self.trumpf_chooser_index = Some(self.players.len() - 1);
+            } else {
+                self.trumpf_chooser_index = Some(self.current_player_index - 1);
+            }
+            
+        } else {
+            self.game_phase = GamePhase::Prediction;
+        }
     }
 }
 
@@ -272,5 +302,22 @@ mod test {
                 name: "kaipai5".to_string()
             }
         );
+    }
+
+    #[test]
+    fn deal_cards() {
+        let mut lobby = WizardGame::new(3, "lil_maeve");
+        lobby.add_player(Player::new("ThePseud0"));
+        lobby.add_player(Player::new("kredit0r"));
+
+        lobby.start_new_round();
+        lobby.start_new_round();
+
+        dbg!(lobby.players);
+
+        
+
+
+        
     }
 }
