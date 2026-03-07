@@ -260,6 +260,12 @@ impl WizardGame {
             self.game_phase = GamePhase::Prediction;
         }
     }
+
+    fn choose_trumpf(&mut self, suit: Suit) {
+        self.trumpf = Some(Card::new(suit, 14));
+        self.game_phase = GamePhase::Prediction;
+    }
+
 }
 
 #[cfg(test)]
