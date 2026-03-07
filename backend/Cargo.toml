@@ -8,3 +8,6 @@ edition = "2024"
 
 [workspace.dependencies]
 gamelogic = {path = "packages/gamelogic"}
+
+[workspace.lints.clippy]
+pedantic = "warn"

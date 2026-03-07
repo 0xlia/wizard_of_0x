@@ -1,5 +1,5 @@
 [package]
-name = "gameserver"
+name = "gamelogic"
 version = "0.1.0"
 edition = "2024"
 
@@ -8,5 +8,5 @@ rand = "0.9.2"
 rand_distr = "0.5.1"
 thiserror = "2.0.18"
 
-[lints.clippy]
-pedantic = "warn"
+[lints]
+workspace = true

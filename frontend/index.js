@@ -1,7 +1,7 @@
 const form1 = document.querySelector("#create_game_input");
 const form2 = document.querySelector("#join_game_input");
 
-const websocket = new WebSocket("ws://localhost:8765/");
+const websocket = new WebSocket("ws://localhost:3000/");
 
 form1.addEventListener("submit", handler);
 form2.addEventListener("submit", handler);
