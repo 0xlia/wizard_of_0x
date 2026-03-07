@@ -1,0 +1,10 @@
+[workspace]
+resolver = "3"
+members = ["packages/*"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+
+[workspace.dependencies]
+gamelogic = {path = "packages/gamelogic"}
