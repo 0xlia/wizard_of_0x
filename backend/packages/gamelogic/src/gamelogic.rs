@@ -126,8 +126,6 @@ impl Player {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct WizardGame {
-    id: String,
-
     // players
     num_players: usize,
     players: Vec<Player>,
@@ -159,8 +157,6 @@ impl WizardGame {
         let new_player = Player::new(player_name);
 
         Self {
-            id: Self::create_id(),
-
             // players
             num_players,
             players: vec![new_player],
@@ -181,7 +177,7 @@ impl WizardGame {
 
     /// PHASE: `NOT_STARTED`
     /// returns random ID
-    fn create_id() -> String {
+    pub fn create_id() -> String {
         let password_len = 5;
         let mut rng = rand::rng();
         let id: String = (0..password_len)
