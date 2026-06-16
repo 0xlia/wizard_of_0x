@@ -4,16 +4,19 @@
 
 :root {
     --primary-bg-color: #09090b;
-    --secondary-bg-color: #52525c;
-    --pink-text: #F971BA;
-    --purple-text: #C77DFC; 
-    --orange-text: #FF852E;
-    --white-text:#fce7f3;
-    --green-text: oklch(72.3% 0.219 149.579);
+    --secondary-bg-color: #2a2a33;
+    --pink-text: #ff2a93;
+    --purple-text: #b56bff;
+    --orange-text: #ff8c00;
+    --white-text: #fce7f3;
+    --green-text: #39ff14;
     /* rosa: D69ECB */
     /* https://coolors.co/586095-2b396e-9599ae-8242d5-2c3880-2c2b57-221656-d69ecb */
-    
 
+    --glow-pink: 0 0 6px var(--pink-text), 0 0 14px rgba(255, 42, 147, 0.6);
+    --glow-purple: 0 0 6px var(--purple-text), 0 0 14px rgba(181, 107, 255, 0.6);
+    --glow-orange: 0 0 6px var(--orange-text), 0 0 14px rgba(255, 140, 0, 0.6);
+    --glow-green: 0 0 6px var(--green-text), 0 0 14px rgba(57, 255, 20, 0.55);
 }
 
 
@@ -45,15 +48,13 @@ main{
 h1{
     color: var(--pink-text);
     text-align: center;
-    /* text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.8); */
-    
+    text-shadow: var(--glow-pink);
 }
 
 h2{
     text-align: center;
     text-transform: uppercase;
     border-bottom: 1px solid gainsboro;
-    /* text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.8); */
 }
 
 form{
@@ -115,14 +116,370 @@ input{
 
 #create_game_title{
     color: var(--purple-text);
+    text-shadow: var(--glow-purple);
     text-transform: uppercase;
     border-bottom: 1px solid gainsboro;
 }
 
 #join_game_title{
     color: var(--orange-text);
+    text-shadow: var(--glow-orange);
 }
 
 #current_game_title{
     color: var(--green-text);
+    text-shadow: var(--glow-green);
+}
+
+
+/* ===== game page ===== */
+
+.hud {
+    text-align: center;
+    color: var(--white-text);
+    opacity: 0.85;
+    margin: 0.5em 0 1.5em;
+}
+
+.hud span,
+.hud output {
+    color: var(--pink-text);
+    text-shadow: var(--glow-pink);
+}
+
+.game-row {
+    align-items: stretch;
+}
+
+.log-column,
+.table-column,
+.you-column {
+    border: 1px solid var(--secondary-bg-color);
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.log-column { flex: 0 0 18rem; }
+.table-column { flex: 2; }
+.you-column { flex: 0 0 22rem; }
+
+.log-column h2 { color: var(--green-text); text-shadow: var(--glow-green); }
+.table-column h2 { color: var(--purple-text); text-shadow: var(--glow-purple); }
+.you-column h2 { color: var(--pink-text); text-shadow: var(--glow-pink); }
+
+/* === log === */
+
+#log_list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    max-height: 70vh;
+    font-size: 0.9rem;
+}
+
+#log_list li {
+    padding: 0.25em 0.5em;
+    border-left: 2px solid var(--secondary-bg-color);
+    margin-bottom: 0.15em;
+    word-break: break-word;
+}
+
+#log_list li.log-round_started {
+    border-left-color: var(--orange-text);
+    color: var(--orange-text);
+    text-shadow: var(--glow-orange);
+    margin-top: 0.5em;
+}
+#log_list li.log-trumpf_chosen {
+    border-left-color: var(--purple-text);
+    color: var(--purple-text);
+    text-shadow: var(--glow-purple);
+}
+#log_list li.log-predicted     {
+    border-left-color: var(--green-text);
+    color: var(--green-text);
+    text-shadow: var(--glow-green);
+}
+#log_list li.log-card_played   { border-left-color: var(--white-text); }
+#log_list li.log-trick_won     {
+    border-left-color: var(--pink-text);
+    color: var(--pink-text);
+    text-shadow: var(--glow-pink);
+}
+#log_list li.log-round_scored {
+    border-left-color: var(--orange-text);
+    color: var(--orange-text);
+    text-shadow: var(--glow-orange);
+    margin-top: 0.4em;
+    background-color: rgba(255, 140, 0, 0.06);
+}
+#log_list li.log-game_over {
+    border-left-color: var(--pink-text);
+    color: var(--pink-text);
+    text-shadow: var(--glow-pink);
+    text-align: center;
+    margin-top: 0.6em;
+}
+
+/* === table === */
+
+.table-surface {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    padding: 1em;
+    border: 1px solid var(--secondary-bg-color);
+    border-radius: 5px;
+    background-color: rgba(199, 125, 252, 0.05);
+    min-height: 24rem;
+}
+
+.trumpf-area {
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+}
+
+.trumpf-area .label {
+    text-transform: uppercase;
+    color: var(--orange-text);
+    text-shadow: var(--glow-orange);
+    font-size: 0.85rem;
+}
+
+.trick-pile {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75em;
+    min-height: 7rem;
+    flex: 1;
+    align-items: center;
+}
+
+.trick-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3em;
+}
+
+.trick-card-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--white-text);
+    opacity: 0.75;
+}
+
+.seats {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 0.5em;
+}
+
+.seat {
+    border: 1px solid var(--secondary-bg-color);
+    border-radius: 5px;
+    padding: 0.5em 0.8em;
+    min-width: 7rem;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+.seat.active {
+    border-color: var(--pink-text);
+    color: var(--pink-text);
+    text-shadow: var(--glow-pink);
+    box-shadow: 0 0 10px rgba(255, 42, 147, 0.5);
+}
+.seat.you {
+    border-color: var(--green-text);
+    box-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
+}
+.seat.starter::after {
+    content: " *";
+    color: var(--orange-text);
+    text-shadow: var(--glow-orange);
+}
+.seat-name { font-weight: bold; }
+.seat-meta { font-size: 0.8rem; opacity: 0.8; }
+
+/* === scoreboard === */
+
+#scoreboard {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1em;
+    font-size: 0.9rem;
+}
+#scoreboard th,
+#scoreboard td {
+    padding: 0.3em 0.5em;
+    border-bottom: 1px solid var(--secondary-bg-color);
+    text-align: left;
+}
+#scoreboard th {
+    text-transform: uppercase;
+    color: var(--purple-text);
+    text-shadow: var(--glow-purple);
+    font-size: 0.8rem;
+}
+#scoreboard tr.you-row td { color: var(--green-text); text-shadow: var(--glow-green); }
+#scoreboard tr.active-row { background-color: rgba(255, 42, 147, 0.1); }
+
+/* === trumpf picker / prediction keypad === */
+
+.trumpf-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-top: 0.5em;
+}
+.trumpf-picker button {
+    flex: 1 1 calc(50% - 0.5em);
+    width: auto;
+    margin: 0;
+    padding: 0.5em;
+    border: 2px solid var(--secondary-bg-color);
+    border-radius: 5px;
+    background-color: var(--secondary-bg-color);
+    color: var(--white-text);
+    text-transform: uppercase;
+    cursor: pointer;
+}
+.trumpf-picker button[data-suit="red"]    { border-color: #ff2050; color: #ff2050; text-shadow: 0 0 6px rgba(255, 32, 80, 0.6); }
+.trumpf-picker button[data-suit="yellow"] { border-color: #f9f871; color: #f9f871; text-shadow: 0 0 6px rgba(249, 248, 113, 0.6); }
+.trumpf-picker button[data-suit="green"]  { border-color: var(--green-text); color: var(--green-text); text-shadow: var(--glow-green); }
+.trumpf-picker button[data-suit="blue"]   { border-color: #00f0ff; color: #00f0ff; text-shadow: 0 0 6px rgba(0, 240, 255, 0.6); }
+
+#predict_keypad {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(2.6rem, 1fr));
+    gap: 0.4em;
+    margin-top: 0.5em;
+}
+#predict_keypad button.predict-key {
+    width: auto;
+    margin: 0;
+    padding: 0.5em 0;
+    border: 1px solid var(--purple-text);
+    border-radius: 5px;
+    background-color: var(--secondary-bg-color);
+    color: var(--white-text);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+#predict_keypad button.predict-key:hover {
+    background-color: var(--purple-text);
+    color: var(--primary-bg-color);
+}
+
+/* === hand === */
+
+.hand {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    min-height: 5.5rem;
+    padding: 0.4em 0;
+}
+
+/* === game over === */
+
+.game-over {
+    margin-top: 1em;
+    padding: 1em;
+    border: 1px solid var(--pink-text);
+    border-radius: 5px;
+    text-align: center;
+    background-color: rgba(249, 113, 186, 0.08);
+}
+.game-over h2 {
+    color: var(--pink-text);
+    border-bottom: none;
+    margin-top: 0;
+}
+.game-over a {
+    color: var(--green-text);
+}
+
+/* === cards === */
+
+.card {
+    width: 3rem;
+    height: 4.3rem;
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.3rem;
+    background-color: var(--secondary-bg-color);
+    color: var(--white-text);
+    user-select: none;
+    transition: transform 120ms, box-shadow 120ms;
+}
+.card.red {
+    background-color: #ff2050;
+    color: #fff;
+    text-shadow: 0 0 6px rgba(255, 32, 80, 0.8);
+    box-shadow: 0 0 10px rgba(255, 32, 80, 0.55);
+}
+.card.yellow {
+    background-color: #f9f871;
+    color: #1a1a1a;
+    box-shadow: 0 0 10px rgba(249, 248, 113, 0.65);
+}
+.card.green {
+    background-color: var(--green-text);
+    color: #042400;
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.55);
+}
+.card.blue {
+    background-color: #00f0ff;
+    color: #002633;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.65);
+}
+.card.wizard {
+    background: linear-gradient(135deg, #fff, var(--purple-text));
+    color: #1a1a1a;
+    border-color: var(--purple-text);
+    box-shadow: 0 0 12px rgba(181, 107, 255, 0.7);
+}
+.card.jester {
+    background-color: #444;
+    border-color: #888;
+    box-shadow: 0 0 8px rgba(150, 150, 150, 0.4);
+}
+.card.dim {
+    opacity: 0.35;
+    box-shadow: none;
+}
+.card.highlight {
+    border-color: var(--orange-text);
+    box-shadow: 0 0 0 1px var(--orange-text), 0 0 14px rgba(255, 140, 0, 0.7);
+}
+.card.playable {
+    cursor: pointer;
+}
+.card.playable:hover {
+    transform: translateY(-3px);
+    border-color: var(--pink-text);
+    box-shadow: 0 0 0 1px var(--pink-text), 0 0 14px rgba(255, 42, 147, 0.7);
+}
+
+@media (max-width: 1000px) {
+    .log-column,
+    .table-column,
+    .you-column {
+        flex: 1 1 100%;
+    }
 }

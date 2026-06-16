@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>wizard_of_0x — game</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="game.js" type="module"></script>
+</head>
+<body>
+    <header>
+        <h1>wizard_of_0x</h1>
+        <p class="hud">
+            lobby <span id="hud_lobby">—</span> ·
+            round <span id="hud_round">—</span>/<span id="hud_max_rounds">—</span> ·
+            <span id="hud_phase">—</span> ·
+            trumpf <span id="hud_trumpf">—</span> ·
+            up <span id="hud_current">—</span>
+            <span id="hud_chooser_wrap" hidden>· chooser <span id="hud_chooser">—</span></span>
+            · <output id="status_message"></output>
+        </p>
+    </header>
+    <main>
+        <div class="row game-row">
+            <div class="column log-column">
+                <h2>Log</h2>
+                <ol id="log_list"></ol>
+            </div>
+
+            <div class="column table-column">
+                <h2>Game</h2>
+                <div class="table-surface">
+                    <div class="trumpf-area">
+                        <span class="label">Trumpf:</span>
+                        <div id="trumpf_card"></div>
+                    </div>
+                    <ol id="trick_pile" class="trick-pile"></ol>
+                    <ol id="seats" class="seats"></ol>
+                </div>
+            </div>
+
+            <div class="column you-column">
+                <h2>You</h2>
+
+                <table id="scoreboard">
+                    <thead>
+                        <tr><th>Player</th><th>Pred</th><th>Tricks</th><th>Points</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+                <div id="choose_trumpf_box" hidden>
+                    <p>You flipped a Wizard — pick a trumpf:</p>
+                    <div class="trumpf-picker">
+                        <button type="button" data-suit="red">Red</button>
+                        <button type="button" data-suit="yellow">Yellow</button>
+                        <button type="button" data-suit="green">Green</button>
+                        <button type="button" data-suit="blue">Blue</button>
+                    </div>
+                </div>
+
+                <div id="predict_box" hidden>
+                    <p>Predict tricks (0-<span id="predict_max"></span>):</p>
+                    <div id="predict_keypad"></div>
+                </div>
+
+                <h3 id="your_hand_title">Your hand</h3>
+                <div id="your_hand" class="hand"></div>
+
+                <div id="game_over_box" hidden class="game-over">
+                    <h2>Game over</h2>
+                    <p id="game_over_winner"></p>
+                    <a href="index.html">back to lobby</a>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
